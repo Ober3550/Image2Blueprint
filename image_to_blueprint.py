@@ -69,7 +69,7 @@ for i in range(old_img.size[0]):
             old_pixels[i  ,j+1] = quantize(old_pixels[i  ,j+1],old_pixels[i,j],new_pixels[i,j],5/16)
             old_pixels[i+1,j+1] = quantize(old_pixels[i+1,j+1],old_pixels[i,j],new_pixels[i,j],1/16)
         except:
-            pow
+            pass
 
 #Write blueprint to string to txt file
 bp_string = open('in_n_out/'+filename+".txt","w+")
