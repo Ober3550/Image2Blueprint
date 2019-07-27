@@ -9,44 +9,50 @@ def find_closest_pallette_color(oldpixel,pallette):
 
 def stucki(old_pixels,new_pixels,i,j):
     try:
-        error = (old_pixels[i,j],new_pixels[i,j])/42
+        error = divide_error(old_pixels[i,j],new_pixels[i,j],42)
         #Quantization
-        old_pixels[i+1,j  ] = quantize(old_pixels[i+1,j  ],error<<3)
-        old_pixels[i+2,j  ] = quantize(old_pixels[i+2,j  ],error<<2)
-        old_pixels[i-2,j+1] = quantize(old_pixels[i-2,j+1],error<<1)
-        old_pixels[i-1,j+1] = quantize(old_pixels[i-1,j+1],error<<2)
-        old_pixels[i  ,j+1] = quantize(old_pixels[i  ,j+1],error<<3)
-        old_pixels[i+1,j+1] = quantize(old_pixels[i+1,j+1],error<<2)
-        old_pixels[i+2,j+1] = quantize(old_pixels[i+2,j+1],error<<1)
-        old_pixels[i-2,j+2] = quantize(old_pixels[i-2,j+2],error<<0)
-        old_pixels[i-1,j+2] = quantize(old_pixels[i-1,j+2],error<<1)
-        old_pixels[i  ,j+2] = quantize(old_pixels[i  ,j+2],error<<2)
-        old_pixels[i+1,j+2] = quantize(old_pixels[i+1,j+2],error<<1)
-        old_pixels[i+2,j+2] = quantize(old_pixels[i+2,j+2],error<<0)
+        old_pixels[i+1,j  ] = quantize(old_pixels[i+1,j  ],multiply_error(error,8))
+        old_pixels[i+2,j  ] = quantize(old_pixels[i+2,j  ],multiply_error(error,4))
+        old_pixels[i-2,j+1] = quantize(old_pixels[i-2,j+1],multiply_error(error,2))
+        old_pixels[i-1,j+1] = quantize(old_pixels[i-1,j+1],multiply_error(error,4))
+        old_pixels[i  ,j+1] = quantize(old_pixels[i  ,j+1],multiply_error(error,8))
+        old_pixels[i+1,j+1] = quantize(old_pixels[i+1,j+1],multiply_error(error,4))
+        old_pixels[i+2,j+1] = quantize(old_pixels[i+2,j+1],multiply_error(error,2))
+        old_pixels[i-2,j+2] = quantize(old_pixels[i-2,j+2],multiply_error(error,1))
+        old_pixels[i-1,j+2] = quantize(old_pixels[i-1,j+2],multiply_error(error,2))
+        old_pixels[i  ,j+2] = quantize(old_pixels[i  ,j+2],multiply_error(error,4))
+        old_pixels[i+1,j+2] = quantize(old_pixels[i+1,j+2],multiply_error(error,2))
+        old_pixels[i+2,j+2] = quantize(old_pixels[i+2,j+2],multiply_error(error,1))
     except:
         pass
 
 def floyd_steinberg(old_pixels,new_pixels,i,j):
     try:
-        error = (old_pixels[i,j],new_pixels[i,j])>>4
+        error = divide_error(old_pixels[i,j],new_pixels[i,j],16)
         #Quantization
-        old_pixels[i+1,j  ] = quantize(old_pixels[i+1,j  ],error*7)
-        old_pixels[i-1,j+1] = quantize(old_pixels[i-1,j+1],error*3)
-        old_pixels[i  ,j+1] = quantize(old_pixels[i  ,j+1],error*5)
-        old_pixels[i+1,j+1] = quantize(old_pixels[i+1,j+1],error*1)
+        old_pixels[i+1,j  ] = quantize(old_pixels[i+1,j  ],multiply_error(error,7))
+        old_pixels[i-1,j+1] = quantize(old_pixels[i-1,j+1],multiply_error(error,3))
+        old_pixels[i  ,j+1] = quantize(old_pixels[i  ,j+1],multiply_error(error,5))
+        old_pixels[i+1,j+1] = quantize(old_pixels[i+1,j+1],multiply_error(error,1))
     except:
         pass
+
+def divide_error(old_pixel,new_pixel,factor):
+    return (round((old_pixel[0]-new_pixel[0])/factor),round((old_pixel[1]-new_pixel[1])/factor),round((old_pixel[2]-new_pixel[2])/factor))
+
+def multiply_error(error,factor):
+    return (error[0]*factor,error[1]*factor,error[2]*factor)
         
 def quantize(qua_pixel,error):
-    red   = qua_pixel[0] + error
-    green = qua_pixel[1] + error
-    blue  = qua_pixel[2] + error
+    red   = qua_pixel[0] + error[0]
+    green = qua_pixel[1] + error[1]
+    blue  = qua_pixel[2] + error[2]
     return (red,green,blue)
 
 #################
 #Input File Name#
 #################
-filename = "Factorio-title"
+filename = "Factorio"
 
 #Create Images
 old_img = Image.open('in_n_out/'+filename+'.png')
@@ -64,7 +70,7 @@ pallette  = []
 item_name = []
 item_type = []
 item_size = []
-with open("pallettes/vanilla_2.txt","r") as f:
+with open("pallettes/vanilla.txt","r") as f:
     for line in f:
         entry = line.split(":")
         pallette.append(eval(entry[0].strip()))
@@ -106,14 +112,17 @@ for i in range(old_img.size[0]):
             #For elements with size 1 this will do the same as before            
             for k in range(item_size[p_index]):
                 for l in range(item_size[p_index]):
-                    #Set pixel to closest color
-                    new_pixels[i+k,j+l] = pallette[p_index]
+                    try:
+                        #Set pixel to closest color
+                        new_pixels[i+k,j+l] = pallette[p_index]
                     
-                    #Dither
-                    floyd_steinberg(old_pixels,new_pixels,i+k,j+l)
-                    #stucki(old_pixels,new_pixels,i,j)
+                        #Dither
+                        #floyd_steinberg(old_pixels,new_pixels,i+k,j+l)
+                        stucki(old_pixels,new_pixels,i,j)
                     
-                    collision_mask[i+k][j+l] = 1
+                        collision_mask[i+k][j+l] = 1
+                    except:
+                        pass
 
 #Write blueprint to string to txt file
 bp_string = open('in_n_out/'+filename+".txt","w+")
