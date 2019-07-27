@@ -64,7 +64,7 @@ pallette  = []
 item_name = []
 item_type = []
 item_size = []
-with open("pallettes/vanilla_2.txt","r") as f:
+with open("pallettes/vanilla.txt","r") as f:
     for line in f:
         entry = line.split(":")
         pallette.append(eval(entry[0].strip()))
