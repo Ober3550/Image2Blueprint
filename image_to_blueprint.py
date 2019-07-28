@@ -52,7 +52,7 @@ def quantize(qua_pixel,error):
 #################
 #Input File Name#
 #################
-filename = "Factorio"
+filename = "alien_biomes"
 
 #Create Images
 old_img = Image.open('in_n_out/'+filename+'.png')
@@ -70,7 +70,7 @@ pallette  = []
 item_name = []
 item_type = []
 item_size = []
-with open("pallettes/vanilla.txt","r") as f:
+with open("pallettes/alien_biomes.txt","r") as f:
     for line in f:
         entry = line.split(":")
         pallette.append(eval(entry[0].strip()))
