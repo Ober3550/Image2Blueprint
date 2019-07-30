@@ -1,62 +1,32 @@
 from PIL import Image
 from blueprint_builder import *
 
-def find_closest_pallette_color(oldpixel,pallette):
+def find_closest_pallette_color(old_pixel,error,pallette):
     distance = [0] * len(pallette)
     for i in range(len(pallette)):
-        distance[i] = (oldpixel[0] - pallette[i][0])**2 + (oldpixel[1] - pallette[i][1])**2 + (oldpixel[2] - pallette[i][2])**2
+        distance[i] = (old_pixel[0] + error[0] - pallette[i][0])**2 + (old_pixel[1] + error[1] - pallette[i][1])**2 + (old_pixel[2] + error[2] - pallette[i][2])**2
     return distance.index(min(distance))
-
-def stucki(old_pixels,new_pixels,i,j):
-    try:
-        error = divide_error(old_pixels[i,j],new_pixels[i,j],42)
-        #Quantization
-        old_pixels[i+1,j  ] = quantize(old_pixels[i+1,j  ],multiply_error(error,8))
-        old_pixels[i+2,j  ] = quantize(old_pixels[i+2,j  ],multiply_error(error,4))
-        old_pixels[i-2,j+1] = quantize(old_pixels[i-2,j+1],multiply_error(error,2))
-        old_pixels[i-1,j+1] = quantize(old_pixels[i-1,j+1],multiply_error(error,4))
-        old_pixels[i  ,j+1] = quantize(old_pixels[i  ,j+1],multiply_error(error,8))
-        old_pixels[i+1,j+1] = quantize(old_pixels[i+1,j+1],multiply_error(error,4))
-        old_pixels[i+2,j+1] = quantize(old_pixels[i+2,j+1],multiply_error(error,2))
-        old_pixels[i-2,j+2] = quantize(old_pixels[i-2,j+2],multiply_error(error,1))
-        old_pixels[i-1,j+2] = quantize(old_pixels[i-1,j+2],multiply_error(error,2))
-        old_pixels[i  ,j+2] = quantize(old_pixels[i  ,j+2],multiply_error(error,4))
-        old_pixels[i+1,j+2] = quantize(old_pixels[i+1,j+2],multiply_error(error,2))
-        old_pixels[i+2,j+2] = quantize(old_pixels[i+2,j+2],multiply_error(error,1))
-    except:
-        pass
 
 def floyd_steinberg(old_pixels,new_pixels,i,j):
     try:
-        error = divide_error(old_pixels[i,j],new_pixels[i,j],16)
-        #Quantization
-        old_pixels[i+1,j  ] = quantize(old_pixels[i+1,j  ],multiply_error(error,7))
-        old_pixels[i-1,j+1] = quantize(old_pixels[i-1,j+1],multiply_error(error,3))
-        old_pixels[i  ,j+1] = quantize(old_pixels[i  ,j+1],multiply_error(error,5))
-        old_pixels[i+1,j+1] = quantize(old_pixels[i+1,j+1],multiply_error(error,1))
+        for c in range(3):
+            error = (old_pixels[i,j][c]-new_pixels[i,j][c])>>4
+            #Quantization
+            error_mask[i+1][j  ][c] += error*7
+            error_mask[i-1][j+1][c] += error*5
+            error_mask[i  ][j+1][c] += error*3
+            error_mask[i+1][j+1][c] += error
     except:
-        pass
-
-def divide_error(old_pixel,new_pixel,factor):
-    return (round((old_pixel[0]-new_pixel[0])/factor),round((old_pixel[1]-new_pixel[1])/factor),round((old_pixel[2]-new_pixel[2])/factor))
-
-def multiply_error(error,factor):
-    return (error[0]*factor,error[1]*factor,error[2]*factor)
-        
-def quantize(qua_pixel,error):
-    red   = qua_pixel[0] + error[0]
-    green = qua_pixel[1] + error[1]
-    blue  = qua_pixel[2] + error[2]
-    return (red,green,blue)
+        print(i,j)
 
 #################
 #Input File Name#
 #################
-filename = "alien_biomes"
+filename = "dark_knight"
 
 #Create Images
-old_img = Image.open('in_n_out/'+filename+'.png')
-new_img = Image.new('RGBA',[old_img.size[0],old_img.size[1]],'white')
+old_img = Image.open('in_n_out/'+filename+'.png').convert('RGB')
+new_img = Image.new('RGB',[old_img.size[0],old_img.size[1]],'white')
 
 #Load image into rgba array format
 old_pixels = old_img.load()
@@ -70,7 +40,7 @@ pallette  = []
 item_name = []
 item_type = []
 item_size = []
-with open("pallettes/alien_biomes.txt","r") as f:
+with open("pallettes/vanilla_solar.txt","r") as f:
     for line in f:
         entry = line.split(":")
         pallette.append(eval(entry[0].strip()))
@@ -86,7 +56,8 @@ with open("pallettes/alien_biomes.txt","r") as f:
             item_size.append(1)
 
 #Add mask to be able to dither irregularly sized objects
-collision_mask = [[0 for x in range(old_img.size[1])] for y in range(old_img.size[0])] 
+collision_mask = [[0 for x in range(old_img.size[0])] for y in range(old_img.size[1])] 
+error_mask = [[[0 for c in range(3)] for x in range(old_img.size[0])] for y in range(old_img.size[1])] 
 
 #Iterate through image and quantize it
 progress = 0
@@ -97,32 +68,31 @@ for i in range(old_img.size[0]):
         print("{}%".format(progress))
         
     for j in range(old_img.size[1]):
-        if collision_mask[i][j] == 0:
-            #Find entity assosciated with closest pallette color
-            p_index = find_closest_pallette_color(old_pixels[i,j],pallette);
-
-            #Add entity
-            if item_name[p_index] != None:
-                if item_size[p_index] != 1:
-                    bp.addEntity(item_name[p_index],(i+(item_size[p_index])/2,j+(item_size[p_index])/2),item_type[p_index])
-                else:
-                    bp.addEntity(item_name[p_index],(i,j),item_type[p_index])
-
-            #Apply dithering to region around irregularly sized entity and set collision boundary
-            #For elements with size 1 this will do the same as before            
-            for k in range(item_size[p_index]):
-                for l in range(item_size[p_index]):
-                    try:
+        #Find entity assosciated with closest pallette color
+        p_index = find_closest_pallette_color(old_pixels[i,j],error_mask[i][j],pallette);
+        collision = False
+        #Apply dithering to region around irregularly sized entity and set collision boundary
+        #For elements with size 1 this will do the same as before            
+        for k in range(item_size[p_index]):
+            if collision==True:
+                break
+            for l in range(item_size[p_index]):
+                if i+k < old_img.size[0]:
+                    if j+l < old_img.size[1]:
+                        if collision_mask[i+k][j+l] == 1:
+                            collision=True
+                            break
                         #Set pixel to closest color
                         new_pixels[i+k,j+l] = pallette[p_index]
-                    
-                        #Dither
-                        #floyd_steinberg(old_pixels,new_pixels,i+k,j+l)
-                        stucki(old_pixels,new_pixels,i,j)
-                    
                         collision_mask[i+k][j+l] = 1
-                    except:
-                        pass
+                        if i+k < old_img.size[0]-1:
+                            if j+l < old_img.size[1]-1:
+                                floyd_steinberg(old_pixels,new_pixels,i+k,j+l)
+        if collision == False:
+            #Add entity
+            if item_name[p_index] != None:
+                bp.addEntity(item_name[p_index],(i,j),item_type[p_index])
+                            
 
 #Write blueprint to string to txt file
 bp_string = open('in_n_out/'+filename+".txt","w+")
@@ -131,5 +101,5 @@ bp_string.close()
 
 #Show Final Image
 new_img.show()
-new_img.save('in_n_out/'+filename+'_output.png')
+new_img.save('in_n_out/'+filename+'_output_floyd.png')
 
