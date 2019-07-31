@@ -9,7 +9,7 @@ class Blueprint:
         self.__bluestring_json = {}
         self.__bluestring_json["blueprint"] = {}
         self.__bluestring_json["blueprint"]["item"] = "blueprint"
-        self.__bluestring_json["blueprint"]["label"] = name+" BP Image"
+        self.__bluestring_json["blueprint"]["label"] = name
         self.__bluestring_json["blueprint"]["version"] = 68722819072
         self.__bluestring_json["blueprint"]["entities"] = []
         self.__bluestring_json["blueprint"]["tiles"] = []

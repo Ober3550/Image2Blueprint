@@ -1,3 +1,18 @@
+(49,49,49)   : stone-path : tile
+(99,101,99)  : concrete : tile
+(123,125,0)  : hazard-concrete-left : tile
+(164,117,115): dect-copper-ore-gravel : tile
+(82,85,82)   : dect-coal-gravel : tile
+(115,138,164): dect-iron-ore-gravel : tile
+(148,146,148): dect-stone-gravel : tile
+(139,69,19)  : dect-wood-floor : tile
+(206,77,74)  : dect-paint-danger-left : tile
+(222,89,99)  : dect-paint-emergency-left : tile
+(222,142,66) : dect-paint-caution-left : tile
+(222,142,197) : dect-paint-radiation-left : tile
+(115,125,255) : dect-paint-defect-left : tile
+(90,93,90)    : dect-paint-operations-left : tile
+(156,198,99)  : dect-paint-safety-left : tile
 (218, 221, 230) : frozen-snow-0 : tile
 (215, 219, 228) : frozen-snow-1 : tile
 (201, 206, 214) : frozen-snow-2 : tile

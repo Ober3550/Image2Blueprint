@@ -22,7 +22,7 @@ def floyd_steinberg(old_pixels,new_pixels,i,j):
 #################
 #Input File Name#
 #################
-filename = "dark_knight"
+filename = "mountain"
 
 #Create Images
 old_img = Image.open('in_n_out/'+filename+'.png').convert('RGB')
@@ -40,7 +40,7 @@ pallette  = []
 item_name = []
 item_type = []
 item_size = []
-with open("pallettes/vanilla_solar.txt","r") as f:
+with open("pallettes/alien_biomes_optimized.txt","r") as f:
     for line in f:
         entry = line.split(":")
         pallette.append(eval(entry[0].strip()))
@@ -56,8 +56,8 @@ with open("pallettes/vanilla_solar.txt","r") as f:
             item_size.append(1)
 
 #Add mask to be able to dither irregularly sized objects
-collision_mask = [[0 for x in range(old_img.size[0])] for y in range(old_img.size[1])] 
-error_mask = [[[0 for c in range(3)] for x in range(old_img.size[0])] for y in range(old_img.size[1])] 
+collision_mask = [[0 for x in range(old_img.size[1])] for y in range(old_img.size[0])] 
+error_mask = [[[0 for c in range(3)] for x in range(old_img.size[1])] for y in range(old_img.size[0])] 
 
 #Iterate through image and quantize it
 progress = 0
@@ -101,5 +101,5 @@ bp_string.close()
 
 #Show Final Image
 new_img.show()
-new_img.save('in_n_out/'+filename+'_output_floyd.png')
+new_img.save('in_n_out/'+filename+'_output.png')
 
