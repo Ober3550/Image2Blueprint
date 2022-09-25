@@ -22,7 +22,8 @@ def floyd_steinberg(old_pixels,new_pixels,i,j):
 #################
 #Input File Name#
 #################
-filename = "mountain"
+filename = "grills"
+pallettename = "grills_pallette"
 
 #Create Images
 old_img = Image.open('in_n_out/'+filename+'.png').convert('RGB')
@@ -40,20 +41,24 @@ pallette  = []
 item_name = []
 item_type = []
 item_size = []
-with open("pallettes/alien_biomes_optimized.txt","r") as f:
+used_pallette = {}
+used_pallette_colour = {}
+with open("pallettes/"+pallettename+".txt","r") as f:
     for line in f:
-        entry = line.split(":")
-        pallette.append(eval(entry[0].strip()))
-        try:
-            item_name.append(entry[1].strip())
-            item_type.append(entry[2].strip())     
-        except:
-            item_name.append(None)
-            item_type.append(None)
-        try:
-            item_size.append(eval(entry[3].strip()))
-        except:
-            item_size.append(1)
+        if line[0:2] != "//":
+            entry = line.split(":")
+            pallette.append(eval(entry[0].strip()))
+            try:
+                used_pallette_colour[entry[1].strip()] = eval(entry[0].strip())
+                item_name.append(entry[1].strip())
+                item_type.append(entry[2].strip())     
+            except:
+                item_name.append(None)
+                item_type.append(None)
+            try:
+                item_size.append(eval(entry[3].strip()))
+            except:
+                item_size.append(1)
 
 #Add mask to be able to dither irregularly sized objects
 collision_mask = [[0 for x in range(old_img.size[1])] for y in range(old_img.size[0])] 
@@ -91,6 +96,9 @@ for i in range(old_img.size[0]):
         if collision == False:
             #Add entity
             if item_name[p_index] != None:
+                if item_name[p_index] not in used_pallette.keys():
+                    used_pallette[item_name[p_index]] = 0
+                used_pallette[item_name[p_index]] = used_pallette[item_name[p_index]] + 1
                 bp.addEntity(item_name[p_index],(i,j),item_type[p_index])
                             
 
@@ -98,6 +106,15 @@ for i in range(old_img.size[0]):
 bp_string = open('in_n_out/'+filename+".txt","w+")
 bp_string.write(bp.getBlueprintString())
 bp_string.close()
+
+with open("pallettes/"+filename+"_pallette.txt","w") as f:
+    f.write("")
+    
+with open("pallettes/"+filename+"_pallette.txt","a") as f:
+    used_pallette_keys = used_pallette.keys()
+    used_pallette_sorted = sorted(used_pallette_keys, key=lambda x: -used_pallette[x])
+    for colour in used_pallette_sorted:
+        f.write("{0}:{1}:tile:1:{2}\n".format(used_pallette_colour[colour],colour,used_pallette[colour]))
 
 #Show Final Image
 new_img.show()
