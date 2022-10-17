@@ -3,7 +3,7 @@
 
 # How to use. 
 1. Have Python Installed (2 or 3). Download online -default install
-2. Have Pillow Installed. Go to run -> cmd -> pip install pillow
+2. Install requirements: `pip install -r requirements.txt`
 
 3. Insert your desired png file into in_n_out
 4. Open the 'image_to_blueprint' script with IDLE since it's both an editor and the interpreter.
