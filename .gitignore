@@ -10,4 +10,4 @@ pip-wheel-metadata
 .venv
 venv
 .vscode/**
-in_n_out/*
+output/*

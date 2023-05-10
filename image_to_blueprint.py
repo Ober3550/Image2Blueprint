@@ -1,55 +1,73 @@
 from PIL import Image
 from blueprint_builder import *
 from argparse import ArgumentParser
+import os.path
 
 parser = ArgumentParser()
-parser.add_argument("target", help="target png file to convert to blueprint", type=str)
-parser.add_argument("--palette", help="palette to use. defaults to vanilla", type=str, default="vanilla")
+parser.add_argument(
+    "target", help="path to target png file to convert to blueprint", type=str
+)
+parser.add_argument(
+    "--palette",
+    help="palette to use. defaults to vanilla. palettes stored in `palettes/`",
+    type=str,
+    default="vanilla",
+)
 
-def find_closest_palette_color(old_pixel,error,palette):
+
+def find_closest_palette_color(old_pixel, error, palette):
     distance = [0] * len(palette)
     for i in range(len(palette)):
-        distance[i] = (old_pixel[0] + error[0] - palette[i][0])**2 + (old_pixel[1] + error[1] - palette[i][1])**2 + (old_pixel[2] + error[2] - palette[i][2])**2
+        distance[i] = (
+            (old_pixel[0] + error[0] - palette[i][0]) ** 2
+            + (old_pixel[1] + error[1] - palette[i][1]) ** 2
+            + (old_pixel[2] + error[2] - palette[i][2]) ** 2
+        )
     return distance.index(min(distance))
 
-def floyd_steinberg(old_pixels,new_pixels,i,j, error_mask):
+
+def floyd_steinberg(old_pixels, new_pixels, i, j, error_mask):
     try:
         for c in range(3):
-            error = (old_pixels[i,j][c]-new_pixels[i,j][c])>>4
-            #Quantization
-            error_mask[i+1][j  ][c] += error*7
-            error_mask[i-1][j+1][c] += error*5
-            error_mask[i  ][j+1][c] += error*3
-            error_mask[i+1][j+1][c] += error
+            error = (old_pixels[i, j][c] - new_pixels[i, j][c]) >> 4
+            # Quantization
+            error_mask[i + 1][j][c] += error * 7
+            error_mask[i - 1][j + 1][c] += error * 5
+            error_mask[i][j + 1][c] += error * 3
+            error_mask[i + 1][j + 1][c] += error
     except:
-        print(i,j)
+        print(i, j)
+
 
 def main(args):
     #################
-    #Input File Name#
+    # Input File Name#
     #################
-    filename = args.target
+    filepath = args.target
     palette_name = args.palette
 
-    #Create Images
-    old_img = Image.open(f'in_n_out/{filename}.png').convert('RGB')
-    new_img = Image.new('RGB',[old_img.size[0],old_img.size[1]],'white')
+    _, file = os.path.split(filepath)
+    filename, _ = os.path.splitext(file)
 
-    #Load image into rgba array format
+    # Create Images
+    old_img = Image.open(filepath).convert("RGB")
+    new_img = Image.new("RGB", (old_img.size[0], old_img.size[1]), "white")
+
+    # Load image into rgba array format
     old_pixels = old_img.load()
     new_pixels = new_img.load()
 
-    #Create blueprint builder object
-    bp = Blueprint(filename)
+    # Create blueprint builder object
+    bp = Blueprint(filepath)
 
-    #Introduce palette
-    palette  = []
+    # Introduce palette
+    palette = []
     item_name = []
     item_type = []
     item_size = []
     used_palette = {}
     used_palette_colour = {}
-    with open(f"palettes/{palette_name}.txt","r") as f:
+    with open(f"palettes/{palette_name}.txt", "r") as f:
         for line in f:
             if line[0:2] != "//":
                 entry = line.split(":")
@@ -67,63 +85,76 @@ def main(args):
                 except:
                     item_size.append(1)
 
-    #Add mask to be able to dither irregularly sized objects
-    collision_mask = [[0 for _ in range(old_img.size[1])] for _ in range(old_img.size[0])]
-    error_mask = [[[0 for _ in range(3)] for _ in range(old_img.size[1])] for _ in range(old_img.size[0])]
+    # Add mask to be able to dither irregularly sized objects
+    collision_mask = [
+        [0 for _ in range(old_img.size[1])] for _ in range(old_img.size[0])
+    ]
+    error_mask = [
+        [[0 for _ in range(3)] for _ in range(old_img.size[1])]
+        for _ in range(old_img.size[0])
+    ]
 
-    #Iterate through image and quantize it
+    # Iterate through image and quantize it
     progress = 0
     for i in range(old_img.size[0]):
-        #Progress Meter
-        if progress < round(i*100/old_img.size[0]):
-            progress = round(i*100/old_img.size[0])
+        # Progress Meter
+        if progress < round(i * 100 / old_img.size[0]):
+            progress = round(i * 100 / old_img.size[0])
             print(f"{progress}%")
 
         for j in range(old_img.size[1]):
-            #Find entity assosciated with closest palette color
-            p_index = find_closest_palette_color(old_pixels[i,j],error_mask[i][j],palette);
+            # Find entity assosciated with closest palette color
+            p_index = find_closest_palette_color(
+                old_pixels[i, j], error_mask[i][j], palette
+            )
             collision = False
-            #Apply dithering to region around irregularly sized entity and set collision boundary
-            #For elements with size 1 this will do the same as before
+            # Apply dithering to region around irregularly sized entity and set collision boundary
+            # For elements with size 1 this will do the same as before
             for k in range(item_size[p_index]):
-                if collision==True:
+                if collision == True:
                     break
                 for l in range(item_size[p_index]):
-                    if i+k < old_img.size[0]:
-                        if j+l < old_img.size[1]:
-                            if collision_mask[i+k][j+l] == 1:
-                                collision=True
+                    if i + k < old_img.size[0]:
+                        if j + l < old_img.size[1]:
+                            if collision_mask[i + k][j + l] == 1:
+                                collision = True
                                 break
-                            #Set pixel to closest color
-                            new_pixels[i+k,j+l] = palette[p_index]
-                            collision_mask[i+k][j+l] = 1
-                            if i+k < old_img.size[0]-1:
-                                if j+l < old_img.size[1]-1:
-                                    floyd_steinberg(old_pixels,new_pixels,i+k,j+l, error_mask)
+                            # Set pixel to closest color
+                            new_pixels[i + k, j + l] = palette[p_index]
+                            collision_mask[i + k][j + l] = 1
+                            if i + k < old_img.size[0] - 1:
+                                if j + l < old_img.size[1] - 1:
+                                    floyd_steinberg(
+                                        old_pixels, new_pixels, i + k, j + l, error_mask
+                                    )
             if collision == False:
-                #Add entity
+                # Add entity
                 if item_name[p_index] != None:
                     if item_name[p_index] not in used_palette.keys():
                         used_palette[item_name[p_index]] = 0
-                    used_palette[item_name[p_index]] = used_palette[item_name[p_index]] + 1
-                    bp.addEntity(item_name[p_index],(i,j),item_type[p_index])
+                    used_palette[item_name[p_index]] = (
+                        used_palette[item_name[p_index]] + 1
+                    )
+                    bp.addEntity(item_name[p_index], (i, j), item_type[p_index])
 
-
-    #Write blueprint to string to txt file
-    bp_string = open(f"in_n_out/{filename}.txt","w+")
+    # Write blueprint to string to txt file
+    bp_string = open(os.path.join("output", f"{filename}.txt"), "w+")
     bp_string.write(bp.getBlueprintString())
     bp_string.close()
 
-    with open(f"palettes/{filename}_palette.txt","w") as f:
+    with open(os.path.join("palettes", f"{filename}_palette.txt"), "w") as f:
         f.write("")
         used_palette_keys = used_palette.keys()
         used_palette_sorted = sorted(used_palette_keys, key=lambda x: -used_palette[x])
         for colour in used_palette_sorted:
-            f.write("{0}:{1}:tile:1:{2}\n".format(used_palette_colour[colour],colour,used_palette[colour]))
+            f.write(
+                f"{used_palette_colour[colour]}:{colour}:tile:1:{used_palette[colour]}\n"
+            )
 
-    #Show Final Image
+    # Show Final Image
     new_img.show()
-    new_img.save(f'in_n_out/{filename}_output.png')
+    new_img.save(os.path.join("output", f"{filename}_output.png"))
+
 
 if __name__ == "__main__":
     main(parser.parse_args())
