@@ -9,3 +9,5 @@ __pycache__
 pip-wheel-metadata
 .venv
 venv
+.vscode/**
+output/*
