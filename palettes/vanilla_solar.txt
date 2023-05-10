@@ -1,0 +1,3 @@
+(0,93,148)   : substation : entity : 2
+(25,32,33)   : solar-panel : entity : 3
+(123,121,123): accumulator : entity : 2

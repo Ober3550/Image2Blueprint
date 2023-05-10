@@ -1,7 +1,0 @@
-(49,49,49)   : stone-path : tile
-(99,101,99)  : concrete : tile
-(123,125,0)  : hazard-concrete-left : tile
-(0,93,148)   : logistic-chest-requester : entity
-(123,125,123): gate : entity
-(206,214,206): stone-wall : entity
-(206,158,66) : transport-belt : entity
